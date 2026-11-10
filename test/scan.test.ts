@@ -5,6 +5,7 @@ import {
 	classify,
 	containerSignature,
 	descendants,
+	detachedRoots,
 	parseDockerPs,
 	parseEnv,
 	parseEtime,
@@ -65,6 +66,24 @@ describe("parsing", () => {
 	test("descendants walks the whole tree", () => {
 		const procs = parsePs("10 1 1:00 1 a\n11 10 1:00 1 b\n12 11 1:00 1 c\n13 1 1:00 1 d\n");
 		expect(descendants(procs, 10).sort()).toEqual([11, 12]);
+	});
+
+	test("detached roots: re-parented to init or a subreaper, never under omp", () => {
+		const procs = parsePs(
+			[
+				"1 0 9:00 1 /sbin/init",
+				"50 1 9:00 1 /usr/lib/systemd/systemd --user",
+				"100 1 9:00 1 /Users/x/.bun/bin/omp",
+				"101 100 9:00 1 node tracked-job.js",
+				"200 50 9:00 1 node orphan-under-subreaper.js",
+				"201 200 9:00 1 node its-child.js",
+				"300 1 9:00 1 node orphan-under-init.js",
+				"400 1 9:00 1 some-daemon",
+			].join("\n"),
+		);
+		for (const p of procs) if ([101, 200, 201, 300].includes(p.pid)) p.sessionId = "s";
+		// 50 and 400 have no marker: candidates only for the throwaway-browser rule in classify.
+		expect(detachedRoots(procs, 999).map(p => p.pid)).toEqual([50, 200, 300, 400]);
 	});
 });
 

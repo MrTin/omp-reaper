@@ -84,7 +84,7 @@ The `omp.session` label is how the reaper ties a container to a session. Unlabel
 
 ## How it decides
 
-Every command omp's bash tool runs inherits `PI_SESSION_ID`, and that survives the process being re-parented to PID 1. Each minute the reaper asks omp (`omp session lease`) whether that session is still open.
+Every command omp's bash tool runs inherits `PI_SESSION_ID`, and that survives the process being re-parented (to PID 1, or a Linux subreaper such as `systemd --user`). Each minute the reaper asks omp (`omp session lease`) whether that session is still open.
 
 | Process | Action |
 |---|---|

@@ -1,7 +1,7 @@
 // Integration: the real process table and, when installed, the real omp CLI.
 import { afterAll, expect, test } from "bun:test";
 import type { ExecResult } from "@oh-my-pi/pi-coding-agent";
-import type { Proc } from "../src/scan.ts";
+import { detachedRoots, type Proc } from "../src/scan.ts";
 import { listProcs, queryLeases } from "../src/system.ts";
 
 const exec = async (cmd: string, args: string[]): Promise<ExecResult> => {
@@ -16,19 +16,22 @@ afterAll(() => {
 	Bun.spawnSync(["pkill", "-f", marker]);
 });
 
-test("a detached process keeps its omp session marker", async () => {
-	// Double fork so it is re-parented to launchd/init, as `cmd &` from the bash tool is.
+test("a detached process keeps its omp session marker and counts as detached", async () => {
+	// Double fork so it is re-parented (launchd, init, or a Linux subreaper), as `cmd &` from the bash tool is.
 	// Run bun itself: macOS hides the environment of SIP-protected binaries like /bin/sleep.
 	const child = `${process.execPath} -e 'setTimeout(() => {}, 60000)' ${marker}`;
 	Bun.spawnSync(["/bin/sh", "-c", `(PI_SESSION_ID=${fakeSession} PI_SESSION_FILE=/tmp/x.jsonl ${child} &)`]);
 
 	// The detached child is outside our control: poll the real process table until it shows up.
+	let procs: Proc[] = [];
 	let proc: Proc | undefined;
-	for (let i = 0; i < 100 && !proc?.sessionId; i++) {
-		proc = (await listProcs(exec)).find(p => p.command.includes(marker));
+	for (let i = 0; i < 60 && !proc?.sessionId; i++) {
+		procs = await listProcs(exec);
+		proc = procs.find(p => p.command.includes(marker));
 		if (!proc?.sessionId) await Bun.sleep(50);
 	}
-	expect(proc).toMatchObject({ ppid: 1, sessionId: fakeSession, sessionFile: "/tmp/x.jsonl" });
+	expect(proc).toMatchObject({ sessionId: fakeSession, sessionFile: "/tmp/x.jsonl" });
+	expect(detachedRoots(procs, process.pid).map(p => p.pid)).toContain(proc?.pid ?? -1);
 });
 
 test.skipIf(!Bun.which("omp"))("omp reports an unknown session as free", async () => {

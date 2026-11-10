@@ -147,9 +147,25 @@ export function isOmpProcess(command: string): boolean {
 	return exe === "omp" || command.includes("__omp_worker");
 }
 
-/** Processes re-parented to launchd/init: their launching shell or omp is gone. */
+/**
+ * Processes whose launcher is gone, outside any live omp process:
+ * - with a session marker: the parent is not part of the same omp-launched tree.
+ *   Covers Linux subreapers (systemd --user, CI runners), not just PID 1.
+ * - without one: re-parented to PID 1 (only throwaway headless browsers qualify later).
+ */
 export function detachedRoots(procs: Proc[], selfPid: number): Proc[] {
-	return procs.filter(p => p.ppid === 1 && p.pid !== selfPid && !isOmpProcess(p.command));
+	const byPid = new Map(procs.map(p => [p.pid, p]));
+	const underOmp = (p: Proc) => {
+		for (let q = byPid.get(p.ppid); q; q = q.pid > 1 ? byPid.get(q.ppid) : undefined) {
+			if (q.pid === selfPid || isOmpProcess(q.command)) return true;
+		}
+		return false;
+	};
+	return procs.filter(p => {
+		if (p.pid === selfPid || isOmpProcess(p.command) || underOmp(p)) return false;
+		if (p.sessionId) return byPid.get(p.ppid)?.sessionId !== p.sessionId;
+		return p.ppid === 1;
+	});
 }
 
 export function descendants(procs: Proc[], rootPid: number): number[] {

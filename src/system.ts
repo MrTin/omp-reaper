@@ -4,24 +4,22 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ExtensionAPI } from "@oh-my-pi/pi-coding-agent";
-import { type Container, type Lease, type Proc, detachedRoots, parseDockerPs, parseEnv, parsePs } from "./scan.ts";
+import { type Container, type Lease, type Proc, parseDockerPs, parseEnv, parsePs } from "./scan.ts";
 
 export type Exec = ExtensionAPI["exec"];
 
 const ompBin = path.basename(process.execPath).startsWith("omp") ? process.execPath : "omp";
 
-/** Every process, with omp session markers filled in for detached roots. */
+/** Every process, with omp session markers filled in where readable. */
 export async function listProcs(exec: Exec): Promise<Proc[]> {
 	const base = await exec("ps", ["-axww", "-o", "pid=,ppid=,etime=,rss=,command="]);
 	if (base.code !== 0) return [];
 	const procs = parsePs(base.stdout);
-	const roots = new Set(detachedRoots(procs, process.pid).map(p => p.pid));
 	if (process.platform === "linux") {
 		for (const p of procs) {
-			if (!roots.has(p.pid)) continue;
 			try {
 				Object.assign(p, parseEnv(fs.readFileSync(`/proc/${p.pid}/environ`, "utf8")));
-			} catch {}
+			} catch {} // other users' processes, or already exited
 		}
 		return procs;
 	}
@@ -30,7 +28,7 @@ export async function listProcs(exec: Exec): Promise<Proc[]> {
 	const byPid = new Map(procs.map(p => [p.pid, p]));
 	for (const line of withEnv.stdout.split("\n")) {
 		const m = line.match(/^\s*(\d+)\s(.*)$/);
-		const p = m && roots.has(Number(m[1])) ? byPid.get(Number(m[1])) : undefined;
+		const p = m ? byPid.get(Number(m[1])) : undefined;
 		if (p && m?.[2].startsWith(p.command)) Object.assign(p, parseEnv(m[2].slice(p.command.length)));
 	}
 	return procs;

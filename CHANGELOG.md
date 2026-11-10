@@ -4,6 +4,10 @@ All notable changes. Versions follow [semver](https://semver.org); tags are `vX.
 
 ## Unreleased
 
+## 0.1.1 - 2026-11-10
+
+- Fix: on Linux, orphans re-parented to a subreaper (`systemd --user`, CI runners) instead of PID 1 were never seen.
+
 ## 0.1.0 - 2026-11-10
 
 - Sweep detached processes and `omp.session`-labelled containers every minute.
