@@ -1,0 +1,16 @@
+{
+	"name": "omp-reaper",
+	"owner": { "name": "MrTin" },
+	"metadata": { "description": "Close processes omp agents leave running" },
+	"plugins": [
+		{
+			"name": "reaper",
+			"description": "Closes processes and containers agents leave running, and learns which ones to keep.",
+			"source": "./",
+			"category": "productivity",
+			"license": "MIT",
+			"repository": "https://github.com/MrTin/omp-reaper",
+			"keywords": ["processes", "cleanup"]
+		}
+	]
+}

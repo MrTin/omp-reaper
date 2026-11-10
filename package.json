@@ -1,0 +1,62 @@
+{
+	"name": "omp-reaper",
+	"version": "0.1.0",
+	"description": "omp extension that closes processes and containers agents leave running, and learns which ones to keep.",
+	"type": "module",
+	"license": "MIT",
+	"author": "MrTin",
+	"homepage": "https://github.com/MrTin/omp-reaper#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/MrTin/omp-reaper.git"
+	},
+	"bugs": "https://github.com/MrTin/omp-reaper/issues",
+	"keywords": ["omp", "oh-my-pi", "omp-plugin", "omp-extension", "processes", "cleanup", "orphans", "docker"],
+	"os": ["darwin", "linux"],
+	"engines": {
+		"bun": ">=1.3",
+		"omp": ">=18.6.0"
+	},
+	"files": ["src", "README.md", "LICENSE", "CHANGELOG.md"],
+	"omp": {
+		"extensions": ["./src/index.ts"],
+		"settings": {
+			"dryRun": {
+				"type": "boolean",
+				"default": false,
+				"env": "OMP_REAPER_DRY_RUN",
+				"description": "Log what would be closed instead of closing it"
+			},
+			"graceMinutes": {
+				"type": "number",
+				"default": 10,
+				"min": 1,
+				"env": "OMP_REAPER_GRACE_MINUTES",
+				"description": "Wait before asking an agent, between asks, and on top of a hold"
+			},
+			"maxAsks": {
+				"type": "number",
+				"default": 2,
+				"min": 0,
+				"env": "OMP_REAPER_MAX_ASKS",
+				"description": "Unanswered asks before notifying you instead (0 = never ask the agent)"
+			},
+			"closeHeadlessBrowsers": {
+				"type": "boolean",
+				"default": true,
+				"env": "OMP_REAPER_CLOSE_BROWSERS",
+				"description": "Close abandoned headless browsers without asking"
+			}
+		}
+	},
+	"scripts": {
+		"test": "bun test",
+		"check": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"@oh-my-pi/pi-coding-agent": "18.18.6",
+		"@oh-my-pi/pi-utils": "18.18.6",
+		"@types/bun": "1.4.4",
+		"typescript": "7.0.2"
+	}
+}
