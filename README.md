@@ -1,4 +1,4 @@
-# omp-reaper
+# omp-reaper [![ci](https://github.com/MrTin/omp-reaper/actions/workflows/ci.yml/badge.svg)](https://github.com/MrTin/omp-reaper/actions/workflows/ci.yml)
 
 Your agents start things. The reaper finishes them.
 
@@ -14,7 +14,7 @@ If one is no longer needed, stop it or call `reaper_hold` with `minutes: 0`.
 
 ```bash
 omp plugin install github:MrTin/omp-reaper          # latest
-omp plugin install 'github:MrTin/omp-reaper#v0.1.0' # pinned
+omp plugin install 'github:MrTin/omp-reaper#v0.1.1' # pinned
 ```
 
 Restart omp. Check it loaded:

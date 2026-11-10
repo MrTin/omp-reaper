@@ -31,6 +31,7 @@ omp plugin link .    # load this checkout in omp; restart omp after changes
 
 1. Move the `Unreleased` entries in `CHANGELOG.md` under `## X.Y.Z - YYYY-MM-DD`; commit.
 2. `npm version X.Y.Z -m "release: v%s"` bumps `package.json`, commits and tags `vX.Y.Z`.
-3. `git push --follow-tags`.
+3. `git push --follow-tags`. CI must be green on the tagged commit.
+4. Once published to npm: `npm publish --access public`. The `omp-plugin` keyword lists it on [omppackages.com](https://omppackages.com).
 
 Patch: fixes. Minor: new behaviour or setting. Major: a setting removed or renamed, or a default that closes more than before.
