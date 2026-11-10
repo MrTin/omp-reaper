@@ -27,11 +27,29 @@ omp plugin link .    # load this checkout in omp; restart omp after changes
 - Commit no personal paths, session ids, hostnames or credentials. Tests use fake ids and temp dirs (`test/setup.ts`).
 - No runtime dependencies. `@oh-my-pi/*` imports resolve to the host omp at runtime.
 
+## Workflow
+
+`main` is protected: no direct pushes (admins included), CI (`test (ubuntu-latest)`, `test (macos-latest)`) must pass, linear history, squash merge only, branches auto-deleted after merge.
+
+```bash
+git checkout main && git pull
+git checkout -b <type>/<short-description>   # feat/ fix/ chore/ docs/ test/
+# ... change, add a CHANGELOG "Unreleased" line if users notice it ...
+git push -u origin HEAD
+gh pr create --fill
+gh pr merge --squash --auto                  # merges once CI is green
+```
+
+PR title = the squash commit subject, so write it as a Conventional Commit: `fix: …`, `feat: …`.
+
 ## Releasing
 
-1. Move the `Unreleased` entries in `CHANGELOG.md` under `## X.Y.Z - YYYY-MM-DD`; commit.
-2. `npm version X.Y.Z -m "release: v%s"` bumps `package.json`, commits and tags `vX.Y.Z`.
-3. `git push --follow-tags`. CI must be green on the tagged commit.
-4. Once published to npm: `npm publish --access public`. The `omp-plugin` keyword lists it on [omppackages.com](https://omppackages.com).
+Releases are cut from `main`, through a PR like any other change:
+
+1. Branch `release/vX.Y.Z`. Move the `Unreleased` entries in `CHANGELOG.md` under `## X.Y.Z - YYYY-MM-DD`.
+2. `npm version X.Y.Z --no-git-tag-version` (bumps `package.json`), commit, PR titled `release: vX.Y.Z`, squash-merge.
+3. Tag the merged commit: `git checkout main && git pull && git tag vX.Y.Z && git push origin vX.Y.Z`.
+4. The `release` workflow creates the GitHub Release from that CHANGELOG section.
+5. Once published to npm: `npm publish --access public`. The `omp-plugin` keyword lists it on [omppackages.com](https://omppackages.com).
 
 Patch: fixes. Minor: new behaviour or setting. Major: a setting removed or renamed, or a default that closes more than before.
