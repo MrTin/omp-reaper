@@ -20,7 +20,9 @@ test("a detached process keeps its omp session marker and counts as detached", a
 	// Double fork so it is re-parented (launchd, init, or a Linux subreaper), as `cmd &` from the bash tool is.
 	// Run bun itself: macOS hides the environment of SIP-protected binaries like /bin/sleep.
 	const child = `${process.execPath} -e 'setTimeout(() => {}, 60000)' ${marker}`;
-	Bun.spawnSync(["/bin/sh", "-c", `(PI_SESSION_ID=${fakeSession} PI_SESSION_FILE=/tmp/x.jsonl ${child} &)`]);
+	// stdio to /dev/null: otherwise the child holds spawnSync's pipe open and it blocks until the child exits.
+	const detach = `(PI_SESSION_ID=${fakeSession} PI_SESSION_FILE=/tmp/x.jsonl ${child} </dev/null >/dev/null 2>&1 &)`;
+	Bun.spawnSync(["/bin/sh", "-c", detach]);
 
 	// The detached child is outside our control: poll the real process table until it shows up.
 	let procs: Proc[] = [];
