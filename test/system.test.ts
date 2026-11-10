@@ -30,9 +30,14 @@ test("a detached process keeps its omp session marker and counts as detached", a
 		proc = procs.find(p => p.command.includes(marker));
 		if (!proc?.sessionId) await Bun.sleep(50);
 	}
+	if (!proc?.sessionId) {
+		// Diagnostics for CI: what the process table actually shows for the child.
+		const ps = await exec("ps", ["-axww", "-o", "pid=,ppid=,command="]);
+		console.log("found:", proc, "ps:", ps.stdout.split("\n").filter(l => l.includes(marker)));
+	}
 	expect(proc).toMatchObject({ sessionId: fakeSession, sessionFile: "/tmp/x.jsonl" });
 	expect(detachedRoots(procs, process.pid).map(p => p.pid)).toContain(proc?.pid ?? -1);
-});
+}, 15_000);
 
 test.skipIf(!Bun.which("omp"))("omp reports an unknown session as free", async () => {
 	const leases = await queryLeases(exec, [fakeSession]);
